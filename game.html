@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            height: 100vh;
+            background: #f0f2f5;
+            font-family: Arial, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .container {
+            text-align: center;
+            padding: 20px;
+            max-width: 800px;
+        }
+
+        .progress {
+            display: flex;
+            justify-content: center;
+            gap: 2px;
+            margin: 20px 0;
+        }
+
+        .progress-item {
+            width: 30px;
+            height: 15px;
+            background: #ddd;
+            border-radius: 2px;
+        }
+
+        .number-display {
+            font-size: 4em;
+            font-weight: bold;
+            margin: 50px 0;
+            color: #333;
+        }
+
+        .timer {
+            font-size: 2em;
+            color: #e74c3c;
+            margin: 20px 0;
+        }
+
+        input {
+            font-size: 2em;
+            padding: 10px;
+            width: 400px;
+            margin: 20px 0;
+            text-align: center;
+        }
+
+        button {
+            font-size: 1.5em;
+            padding: 10px 30px;
+            background: #3498db;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+
+        button:hover {
+            background: #2980b9;
+        }
+
+        .start-screen, .end-screen {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: white;
+            padding: 40px;
+            border-radius: 10px;
+            box-shadow: 0 0 20px rgba(0,0,0,0.1);
+        }
+
+        .game-screen {
+            display: none;
+        }
+
+        .score {
+            font-size: 3em;
+            color: #2ecc71;
+            margin: 20px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="start-screen">
+        <h1>Memory Challenge</h1>
+        <div style="text-align: left; margin: 30px 0;">
+            <h3>Game Rules:</h3>
+            <ul style="margin: 15px 0;">
+                <li>20 levels total</li>
+                <li>5 seconds per level</li>
+                <li>Memorize numbers from 1 to 20 digits</li>
+                <li>Correct answer gains points</li>
+                <li>Green = correct, Red = wrong</li>
+                <li>Total score: 1050 maximum</li>
+                <li>840+ points: Excellent!</li>
+            </ul>
+        </div>
+        <button onclick="startGame()">Start Game</button>
+    </div>
+
+    <div class="game-screen">
+        <div class="progress" id="progress"></div>
+        <div class="number-display" id="numberDisplay"></div>
+        <div class="timer" id="timer"></div>
+        <input type="text" id="userInput" style="display: none;" pattern="\d*">
+        <button onclick="submitAnswer()" id="submitBtn" style="display: none;">Submit</button>
+    </div>
+
+    <div class="end-screen" style="display: none;">
+        <div class="score" id="finalScore"></div>
+        <div id="resultText"></div>
+        <button onclick="location.reload()" style="margin-top: 20px;">Play Again</button>
+    </div>
+
+    <script>
+        let currentLevel = 0;
+        let correctAnswers = 0;
+        let totalScore = 0;
+        let progressItems = [];
+        let currentNumber = '';
+
+        function generateNumber(digits) {
+            let number = '';
+            // 首数字不能为0
+            number += Math.floor(Math.random() * 9 + 1);
+            for(let i = 1; i < digits; i++) {
+                number += Math.floor(Math.random() * 10);
+            }
+            return number;
+        }
+
+        function startGame() {
+            document.querySelector('.start-screen').style.display = 'none';
+            document.querySelector('.game-screen').style.display = 'block';
+            
+            // 初始化进度条
+            const progress = document.getElementById('progress');
+            for(let i = 0; i < 20; i++) {
+                const div = document.createElement('div');
+                div.className = 'progress-item';
+                progress.appendChild(div);
+                progressItems.push(div);
+            }
+            
+            startNextLevel();
+        }
+
+        function startNextLevel() {
+            currentLevel++;
+            if(currentLevel > 20) {
+                endGame();
+                return;
+            }
+
+            currentNumber = generateNumber(currentLevel);
+            document.getElementById('numberDisplay').textContent = currentNumber;
+            document.getElementById('userInput').style.display = 'none';
+            document.getElementById('submitBtn').style.display = 'none';
+            
+            let timeLeft = 5;
+            document.getElementById('timer').textContent = timeLeft;
+
+            const timer = setInterval(() => {
+                timeLeft--;
+                document.getElementById('timer').textContent = timeLeft;
+                
+                if(timeLeft <= 0) {
+                    clearInterval(timer);
+                    document.getElementById('numberDisplay').textContent = '';
+                    document.getElementById('userInput').style.display = 'inline';
+                    document.getElementById('submitBtn').style.display = 'inline';
+                    document.getElementById('userInput').focus();
+                }
+            }, 1000);
+        }
+
+        function submitAnswer() {
+            const userAnswer = document.getElementById('userInput').value;
+            const isCorrect = userAnswer === currentNumber;
+            
+            progressItems[currentLevel-1].style.background = isCorrect ? '#2ecc71' : '#e74c3c';
+            
+            if(isCorrect) {
+                correctAnswers++;
+                totalScore += currentLevel * 5;
+            }
+
+            document.getElementById('userInput').value = '';
+            startNextLevel();
+        }
+
+        function endGame() {
+            document.querySelector('.game-screen').style.display = 'none';
+            document.querySelector('.end-screen').style.display = 'block';
+            
+            document.getElementById('finalScore').textContent = `Score: ${totalScore}`;
+            const resultText = document.getElementById('resultText');
+            resultText.innerHTML = totalScore >= 840 ? 
+                '<h2 style="color:#2ecc71;">Excellent! 🎉</h2>' :
+                '<h2 style="color:#e74c3c;">Try Again! 💪</h2>';
+        }
+    </script>
+</body>
+</html>
